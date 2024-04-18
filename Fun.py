@@ -4,17 +4,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import easygui
 import Small_Disp_Normal_Corr as sdnc
-import CpCorr as cp
 
-
-def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
-    vidObj2 = vidObj
+def fun(k1, k2, path, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
+    vidObj1 = cv2.VideoCapture(path)
+    vidObj2 = cv2.VideoCapture(path)
     # 设置视频捕捉对象的帧号
-    vidObj.set(cv2.CAP_PROP_POS_FRAMES, k1 - 1)
+    vidObj1.set(cv2.CAP_PROP_POS_FRAMES, k1 - 1)
     vidObj2.set(cv2.CAP_PROP_POS_FRAMES, k2 - 1)
     # 读取当前帧和计算帧
-    success, I0 = vidObj.read()
+    success, I0 = vidObj1.read()
     success2, I1 = vidObj2.read()
+
+
     # 保存图像的文件名
     U_filename = 'images/1.tif'
     D_filename = 'images/2.tif'
@@ -33,7 +34,7 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
      grid_generator---begin
     '''
     im_grid = cv2.imread(U_filename)
-    if k2 == 2:
+    if k2 - k1 == 1:
         if ff == 1:
             # 创建一个指定大小的图像窗口
             plt.figure(figsize=(17, 15))  # 设置图像窗口大小
@@ -81,13 +82,14 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     leftline = np.array([[xmin, ymin], [xmin, ymax]])
     rightline = np.array([[xmax, ymin], [xmax, ymax]])
 
-    plt.plot(lowerline[:, 0], lowerline[:, 1], '-b')
-    plt.plot(upperline[:, 0], upperline[:, 1], '-b')
-    plt.plot(leftline[:, 0], leftline[:, 1], '-b')
-    plt.plot(rightline[:, 0], rightline[:, 1], '-b')
+    if k2 - k1 == 1:
+        plt.plot(lowerline[:, 0], lowerline[:, 1], '-b')
+        plt.plot(upperline[:, 0], upperline[:, 1], '-b')
+        plt.plot(leftline[:, 0], leftline[:, 1], '-b')
+        plt.plot(rightline[:, 0], rightline[:, 1], '-b')
 
     res_ratio = resolution_ratio
-    if k2 == 2:
+    if k2 - k1 == 1:
         if ROI == 1:
             # 定义对话框的标题和提示信息
             dlg_title = ''
@@ -113,13 +115,13 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     yspacing = float(r_ratio[1])
 
     # 基于选择的间距“向上”四舍五入 xmin、xmax、ymin 和 ymax
-    numXelem = int(np.ceil((xmax - xmin) / xspacing) - 1)
-    numYelem = int(np.ceil((ymax - ymin) / yspacing) - 1)
+    numXelem = np.ceil((xmax - xmin) / xspacing) - 1
+    numYelem = np.ceil((ymax - ymin) / yspacing) - 1
 
-    xmin_new = int((xmax + xmin) / 2 - ((numXelem / 2) * xspacing))
-    xmax_new = int((xmax + xmin) / 2 + ((numXelem / 2) * xspacing))
-    ymin_new = int((ymax + ymin) / 2 - ((numYelem / 2) * yspacing))
-    ymax_new = int((ymax + ymin) / 2 + ((numYelem / 2) * yspacing))
+    xmin_new = np.ceil((xmax + xmin) / 2 - ((numXelem / 2) * xspacing))
+    xmax_new = np.ceil((xmax + xmin) / 2 + ((numXelem / 2) * xspacing))
+    ymin_new = np.ceil((ymax + ymin) / 2 - ((numYelem / 2) * yspacing))
+    ymax_new = np.ceil((ymax + ymin) / 2 + ((numYelem / 2) * yspacing))
 
     # 创建网格
     x, y = np.meshgrid(np.arange(xmin_new, xmax_new + xspacing, xspacing),
@@ -129,8 +131,9 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     rows, columns = x.shape
 
     # 显示图像
-    plt.title('Selected grid has ' + str(rows * columns) + ' rasterpoints')  # 给图像添加标题
-    plt.plot(x, y, '+b')
+    if k2 - k1 == 1:
+        plt.title('Selected grid has ' + str(rows * columns) + ' rasterpoints')  # 给图像添加标题
+        plt.plot(x, y, '+b')
 
     # 初始化一个空数组，用于存放结果
     grid_x = []
@@ -159,7 +162,7 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     if len(deformed.shape) > 2:
         deformed = cv2.cvtColor(deformed, cv2.COLOR_BGR2GRAY)
 
-    if k2 == 2:
+    if k2 - k1 == 1:
         # 定义对话框的标题和提示信息
         prompt = "输入像素坐标中的最大变形[pixels]："
         dlg_title = ""
@@ -195,9 +198,6 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
 
     grid_side_x = grid_x[y_max] - grid_x[0]
 
-    u0 = 0
-    v0 = 0
-
     u = np.zeros((x_max, y_max))
     v = np.zeros((x_max, y_max))
 
@@ -215,21 +215,25 @@ def fun(k1, k2, vidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
         k += 1
         for j in range(1, y_max):
             k += 1
-            u0 = (u[i - 1, j] + u[i, j - 1]) / ((i != 2 or (i == 2 and j == 2)) + (j != 2))
-            v0 = (v[i - 1, j] + v[i, j - 1]) / ((i != 2 or (i == 2 and j == 2)) + (j != 2))
-            u[i, j], v[i, j], c = sdnc.small_disp_normal_corr(int(grid_x[k]), int(grid_y[j]), u0, v0, original,
+            # u0 = (u[i - 1, j] + u[i, j - 1]) / ((i != 2 or (i == 2 and j == 2)) + (j != 2))
+            # v0 = (v[i - 1, j] + v[i, j - 1]) / ((i != 2 or (i == 2 and j == 2)) + (j != 2))
+            u0 = 0
+            v0 = 0
+            u[i, j], v[i, j], c = sdnc.small_disp_normal_corr(int(grid_x[k]), int(grid_y[j]), int(u0), int(v0), original,
                                                               deformed, n, int(sn))
             valid_x[k] = grid_x[k] + u[i, j]
             valid_y[k] = grid_y[k] + v[i, j]
             cc[i][j] = c
-    valid_xy = np.column_stack((valid_x, valid_y))
-    grid_xy = np.column_stack((grid_x, grid_y))
-    input_correl = cp.cpcorr(valid_xy, grid_xy, deformed, original)
-    input_correl_x = input_correl[:, 0]
-    input_correl_y = input_correl[:, 1]
-    # 将 input_correl_x 和 input_correl_y 重新整形为二维数组
-    Uq = np.reshape(input_correl_x - grid_x, (y_max, x_max))
-    Vq = np.reshape(input_correl_y - grid_y, (y_max, x_max))
+    # valid_xy = np.column_stack((valid_x, valid_y))
+    # grid_xy = np.column_stack((grid_x, grid_y))
+    # input_correl = cp.cpcorr(valid_xy, grid_xy, deformed, original)
+    # input_correl_x = input_correl[:, 0]
+    # input_correl_y = input_correl[:, 1]
+    # # 将 input_correl_x 和 input_correl_y 重新整形为二维数组
+    # Uq = np.reshape(input_correl_x - grid_x, (y_max, x_max))
+    # Vq = np.reshape(input_correl_y - grid_y, (y_max, x_max))
+    Uq = u
+    Vq = v
 
     cc = cc[1:, 1:]
-    return Uq, Vq, cc
+    return Uq, Vq, cc, I1

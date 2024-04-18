@@ -42,8 +42,8 @@ def cpcorr(InputPoints, BasePoints, Input, Base):
     [xymoving_in, xyfixed_in, moving, fixed] = ParseInputs(InputPoints, BasePoints, Input, Base)
 
     # get all rectangle coordinates
-    rects_moving = np.array(calc_rects(xymoving_in, CORRSIZE, moving)).astype(int)
-    rects_fixed = np.array(calc_rects(xyfixed_in, 2 * CORRSIZE, fixed)).astype(int)
+    rects_moving = np.array(calc_rects(xymoving_in, CORRSIZE, moving)).astype(np.int32)
+    rects_fixed = np.array(calc_rects(xyfixed_in, 2 * CORRSIZE, fixed)).astype(np.int32)
     ncp = len(np.atleast_1d(xymoving_in))
 
     xymoving = xymoving_in  # initialize adjusted control points matrix
@@ -149,7 +149,7 @@ def calc_rects(xy, halfwidth, img):
     # width[idx] = 0
     # height[idx] = 0
 
-    rect = [left.astype(int), upper.astype(int), width.astype(int), height.astype(int)]
+    rect = [left.astype(np.int32), upper.astype(np.int32), width.astype(np.int32), height.astype(np.int32)]
     return rect
 
 
@@ -237,9 +237,7 @@ def findpeak(f, subpixel):
         # print xpeak, ypeak
 
         # Calculate extremum of fitted function
-        # 将 A 展平为一维数组
-        A_flat = A[:, 0]
-        max_f = np.dot(np.array([1, x_offset[0], y_offset[0], x_offset[0] * y_offset[0], x_offset[0] ** 2, y_offset[0] ** 2]), A_flat)
+        max_f = np.dot(np.array([1, x_offset[0], y_offset[0], x_offset[0] * y_offset[0], x_offset[0] ** 2, y_offset[0] ** 2]), A)
         # max_f = np.dot([1, x_offset, y_offset, x_offset*y_offset, x_offset**2, y_offset**2],A)
         max_f = np.absolute(max_f)
 

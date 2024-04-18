@@ -1,0 +1,56 @@
+import cv2
+import matplotlib
+import numpy as np
+from Fun import fun
+matplotlib.use('TkAgg')
+
+resolution_ratio = [[10, 10]]  #存放输入的水平，垂直分辨率
+maximum_deformation = [15] #存放输入的最大变形
+
+xx = [[1000.25000000000,
+1054.25000000000]]  #存放角点的坐标位置
+yy = [[359.250000000000,
+411.750000000000]]  #存放角点的坐标位置
+# Example usage
+path = 'D:\\project\\pycharm\\DIC\\UCC\\UCC_mp\\cx\\MVI_1681_0-1.MOV'
+f1 = 1  #开始帧
+f2 = 100 #结束帧
+nn = 1  #测点数
+ROI = 1 # ROI的选择方式，1是点击选矩阵的两个角点，2是针对目标较小的情况，点击目标的中心，在中心周围自动生产一个9*9的网格
+
+
+def dic_multipoint(path, f1, f2, nn, ROI):
+    VidObj = cv2.VideoCapture(path)
+    frameRate = VidObj.get(cv2.CAP_PROP_FPS)
+    t = 1 / frameRate
+
+    fend = 5
+    CC = {}  # 创建一个字典来存储 cc
+    UQ = {}
+    VQ = {}
+    k1 = f1
+    for k2 in range(f1 + 1, fend + 1):
+        for ff in range(1, nn + 1):
+            Uq, Vq, cc = fun(k1, k2, VidObj, ff, ROI, resolution_ratio, maximum_deformation, xx, yy)
+            CC[ff, k2 - k1] = cc
+            UQ[ff, k2 - k1] = Uq
+            VQ[ff, k2 - k1] = Vq
+
+            dx = []
+            dy = []
+            for i in range(1, k2):
+                # 取出键为 (ff, i) 的值
+                uq_value = UQ.get((ff, i))
+                vq_value = VQ.get((ff, i))
+
+                 # 找到非零元素并计算平均值
+                uq_nonzero = uq_value[uq_value != 0]
+                vq_nonzero = vq_value[vq_value != 0]
+                dx.append(np.mean(uq_nonzero))
+                dy.append(np.mean(vq_nonzero))
+
+    print(1)
+
+# Call the function
+dic_multipoint(path, f1, f2, nn, ROI)
+
