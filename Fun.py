@@ -5,6 +5,9 @@ import numpy as np
 import easygui
 import Small_Disp_Normal_Corr as sdnc
 
+
+def custom_round(x):
+    return np.floor(x + 0.5)
 def fun(k1, k2, path, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     vidObj1 = cv2.VideoCapture(path)
     vidObj2 = cv2.VideoCapture(path)
@@ -118,10 +121,10 @@ def fun(k1, k2, path, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     numXelem = np.ceil((xmax - xmin) / xspacing) - 1
     numYelem = np.ceil((ymax - ymin) / yspacing) - 1
 
-    xmin_new = np.ceil((xmax + xmin) / 2 - ((numXelem / 2) * xspacing))
-    xmax_new = np.ceil((xmax + xmin) / 2 + ((numXelem / 2) * xspacing))
-    ymin_new = np.ceil((ymax + ymin) / 2 - ((numYelem / 2) * yspacing))
-    ymax_new = np.ceil((ymax + ymin) / 2 + ((numYelem / 2) * yspacing))
+    xmin_new = custom_round((xmax + xmin) / 2.0 - ((numXelem / 2.0) * xspacing))
+    xmax_new = custom_round((xmax + xmin) / 2.0 + ((numXelem / 2.0) * xspacing))
+    ymin_new = custom_round((ymax + ymin) / 2.0 - ((numYelem / 2.0) * yspacing))
+    ymax_new = custom_round((ymax + ymin) / 2.0 + ((numYelem / 2.0) * yspacing))
 
     # 创建网格
     x, y = np.meshgrid(np.arange(xmin_new, xmax_new + xspacing, xspacing),
@@ -153,14 +156,8 @@ def fun(k1, k2, path, ff, ROI, resolution_ratio, maximum_deformation, xx, yy):
     '''
 
     # 读取原始图像和变形后的图像
-    original = cv2.imread(U_filename)
-    deformed = cv2.imread(D_filename)
-
-    # 检查是否为彩色图像，如果是，则转换为灰度图像
-    if len(original.shape) > 2:
-        original = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-    if len(deformed.shape) > 2:
-        deformed = cv2.cvtColor(deformed, cv2.COLOR_BGR2GRAY)
+    original = cv2.imread(U_filename, 0)
+    deformed = cv2.imread(D_filename, 0)
 
     if k2 - k1 == 1:
         # 定义对话框的标题和提示信息

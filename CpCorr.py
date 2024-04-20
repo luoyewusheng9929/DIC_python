@@ -79,8 +79,8 @@ def cpcorr(InputPoints, BasePoints, Input, Base):
             # print 'CpCorr : No Std Dev. No Adjustement.'
             continue
 
-        # norm_cross_corr = cv2.matchTemplate(sub_moving, sub_fixed, cv2.TM_CCOEFF_NORMED)
-        norm_cross_corr = cv2.matchTemplate(sub_moving, sub_fixed, cv2.TM_CCORR_NORMED)
+        norm_cross_corr = cv2.matchTemplate(sub_moving, sub_fixed, cv2.TM_CCOEFF_NORMED)
+        # norm_cross_corr = cv2.matchTemplate(sub_moving, sub_fixed, cv2.TM_CCORR_NORMED)
         # norm_cross_corr=scipy.signal.correlate2d(sub_fixed, sub_moving)
         # norm_cross_corr=sklearn.preprocessing.normalize(norm_cross_corr, norm='l2', axis=1, copy=True)
         # norm_cross_corr=match_template(sub_fixed,sub_moving)

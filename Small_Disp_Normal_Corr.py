@@ -7,22 +7,10 @@ def imcrop(img, rect_roi):
         int(rect_roi[0]) : int(rect_roi[0] + rect_roi[2])]
 
 def small_disp_normal_corr(x, y, u0, v0, original, deformed, n, sn):
-    # 在原始图像中选择pepper below the onion
-    sub_original = original[y - sn:y + sn + 1, x - sn:x + sn + 1]
-    rect_original = (x - sn, y - sn, 2 * sn + 1, 2 * sn + 1)
-    # print('rect_original: ', rect_original)
-
-    sub_deformed = deformed[y + v0 - 2 * sn:y + v0 + 2 * sn + 1, x + u0 - 2 * sn:x + u0 + 2 * sn + 1]
-    rect_deformed = (x + u0 - 2 * sn, y + v0 - 2 * sn, 4 * sn + 1, 4 * sn + 1)
-    # sub_deformed = deformed[y - 2 * sn:y + 2 * sn + 1, x - 2 * sn:x + 2 * sn + 1]
-    # rect_deformed = (x - 2 * sn, y - 2 * sn, 4 * sn + 1, 4 * sn + 1)
-    # print('rect_deformed: ', rect_deformed)
-
-    # 显示裁剪后的图像
-    # cv2.imshow('Original Subimage', sub_original)
-    # cv2.imshow('Deformed Subimage', sub_deformed)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    rect_original = (x - sn, y - sn, 2 * sn + 2, 2 * sn + 2)
+    sub_original = imcrop(original, rect_original)
+    rect_deformed = (x - 2 * sn, y - 2 * sn, 4 * sn + 2, 4 * sn + 2)
+    sub_deformed = imcrop(deformed, rect_deformed)
 
     offset = []
     c = []
@@ -30,43 +18,27 @@ def small_disp_normal_corr(x, y, u0, v0, original, deformed, n, sn):
     if np.array(sub_original.shape)[0] < np.array(sub_deformed.shape)[0] or \
             np.array(sub_original.shape)[1] < np.array(sub_deformed.shape)[1]:
 
-        # c = normxcorr2(sub_original, sub_deformed)
+        c = normxcorr2(sub_original, sub_deformed)
         # 使用模板匹配
-        c = cv2.matchTemplate(sub_deformed, sub_original, cv2.TM_CCOEFF_NORMED)
+        # c = cv2.matchTemplate(sub_deformed, sub_original, cv2.TM_CCOEFF_NORMED)
         # c = cv2.matchTemplate(sub_deformed, sub_original, cv2.TM_CCORR_NORMED)
-        # print('c', c)
-        # print('c.max:', np.max(c))
-        # print('c.shape:', c.shape)
+
+
+        sc = np.shape(c)
+        w = np.concatenate(
+            (np.linspace(0.8, 1, int(np.ceil(sc[0] / 2))), np.linspace(1, 0.8, int(np.floor(sc[0] / 2)))))
+        h = np.concatenate(
+            (np.linspace(0.8, 1, int(np.ceil(sc[1] / 2))), np.linspace(1, 0.8, int(np.floor(sc[1] / 2)))))
+        w = w[np.newaxis, :]
+        h = h[np.newaxis, :]
+        c = c * (w.T @ h)
 
         max_corr_index = np.unravel_index(np.argmax(c), c.shape)
 
-        # 获取最大值位置的坐标
-        yp, xp = max_corr_index
-        # print('max_corr_index:', max_corr_index)
-        # 计算偏移量 画图
-        h, w = sub_original.shape
-        # 计算矩形框的对角线顶点坐标
-        # box_top_left = (xp, yp)
-        # box_bottom_right = (xp + w, yp + h)
-        # # 在sub_deformed图像上绘制白色框
-        # sub_deformed_with_box = cv2.rectangle(sub_deformed.copy(), box_top_left, box_bottom_right, color=(255, 255, 255),
-        #                                       thickness=1)
-        # sub_deformed_with_box = cv2.circle(sub_deformed_with_box, (xp, yp), radius=2, color=(255, 255, 255), thickness=-1)
-        # # 画一条水平线
-        # sub_deformed_with_box = cv2.line(sub_deformed_with_box, (0, yp), (sub_deformed_with_box.shape[1], yp),
-        #                                  color=(255, 255, 255), thickness=1)
-        # # 画一条垂直线
-        # sub_deformed_with_box = cv2.line(sub_deformed_with_box, (xp, 0), (xp, sub_deformed_with_box.shape[0]),
-        #                                  color=(255, 255, 255), thickness=1)
-        # 显示结果
-        # cv2.imshow('Sub Deformed Image with Box', sub_deformed_with_box)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
 
         # 获取最大值位置的坐标
         yp, xp = max_corr_index
-        sc = c.shape
+
         if yp == 0 or yp == sc[0] - 1 or xp == 0 or xp == sc[0] - 1:
             print('Maximum position at matrix border. No subsample approximation possible.')
             return sc[1] / 2, sc[0] / 2, c
@@ -110,12 +82,13 @@ def small_disp_normal_corr(x, y, u0, v0, original, deformed, n, sn):
 
         ypeak = p[0]
         xpeak = p[1]
-        rect_offset = [(rect_deformed[1] - rect_original[1]), (rect_deformed[0] - rect_original[0])]
+        corr_offset = [(xpeak - sub_original.shape[1]), (ypeak - sub_original.shape[0])]
+        rect_offset = [(rect_deformed[0] - rect_original[0]), (rect_deformed[1] - rect_original[1])]
 
-        offset = [ypeak + rect_offset[0], xpeak + rect_offset[1]]
-        # print('offset:', offset)
+        offset = [corr_offset[0] + rect_offset[0], corr_offset[1] + rect_offset[1]]
+
     else:
-        offset[1] = u0
-        offset[0] = v0
+        offset[0] = u0
+        offset[1] = v0
 
-    return offset[1], offset[0], c
+    return offset[0], offset[1], c

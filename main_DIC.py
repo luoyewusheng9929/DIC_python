@@ -12,13 +12,16 @@ maximum_deformation = [] #存放输入的最大变形
 xx = []  #存放角点的坐标位置
 yy = []  #存放角点的坐标位置
 # Example usage
-path = 'D:\\project\\pycharm\\DIC\\UCC\\UCC_mp\\cx\\MVI_1681_0-1.MOV'
+# path = 'D:\\project\\pycharm\\DIC\\UCC\\UCC_mp\\cx\\MVI_1681_0-1.MOV'
+path = 'D:\\project\\pycharm\\DIC\\相机视频.MOV'
+# path = 'D:\\project\\pycharm\\DIC\\20231023悬臂梁试验\\xbl1\\xbl1.mp4'
 f1 = 1  #开始帧
-f2 = 500 #结束帧
+f2 = 2000 #结束帧
 nn = 1  #测点数
 ROI = 1 # ROI的选择方式，1是点击选矩阵的两个角点，2是针对目标较小的情况，点击目标的中心，在中心周围自动生产一个9*9的网格
-bili = 0.232
-
+# bili = 0.232
+# bili = 0.2142
+bili = 1.1413
 def dic_multipoint(path, f1, f2, nn, ROI):
     VidObj = cv2.VideoCapture(path)
     frameRate = VidObj.get(cv2.CAP_PROP_FPS)
@@ -30,11 +33,14 @@ def dic_multipoint(path, f1, f2, nn, ROI):
     VQ = {}
     k1 = f1
     # 创建图形和子图
-    fig = plt.figure(figsize=(15, 4))
-    gs = GridSpec(2, 2)
-    ax1 = fig.add_subplot(gs[0:2, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax3 = fig.add_subplot(gs[1, 1])
+    fig1 = plt.figure(figsize=(18, 12))
+    gs1 = GridSpec(2, 1)
+    ax1 = fig1.add_subplot(gs1[0, 0])
+    ax2 = fig1.add_subplot(gs1[1, 0])
+    fig2 = plt.figure(figsize=(18, 12))
+    gs = GridSpec(2, 1)
+    ax3 = fig2.add_subplot(gs[0, 0])
+    ax4 = fig2.add_subplot(gs[1, 0])
 
     for k2 in range(f1 + 1, fend + 1):
         for ff in range(1, nn + 1):
@@ -74,10 +80,11 @@ def dic_multipoint(path, f1, f2, nn, ROI):
             ax2.set_ylabel('dx')
             ax2.set_xlabel('TT')
             ax3.clear()
-            ax3.plot(TT, dy)
-            ax3.set_title('Plot using dy')
-            ax3.set_ylabel('dy')
-            ax3.set_xlabel('TT')
+            ax3.imshow(I1)
+            ax4.plot(TT, dy)
+            ax4.set_title('Plot using dy')
+            ax4.set_ylabel('dy')
+            ax4.set_xlabel('TT')
 
             # 调整子图布局
             plt.tight_layout()
